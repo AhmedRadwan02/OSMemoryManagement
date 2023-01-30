@@ -8,8 +8,17 @@ public class Test {
 
 		Scanner in = new Scanner(System.in);
 		ArrayList<Process> processList = new ArrayList<Process>();
-		System.out.println("Enter Memory Maximum Size: ");
-		int max = in.nextInt();
+		System.out.print("Enter Memory Maximum Size: ");
+		int max = 0;
+		while (max <= 0) {
+			try {
+				max = in.nextInt();
+			} catch (InputMismatchException e) {
+				System.out.println("Enter a Positive Integer!");
+				in.next();
+				continue;
+			}
+		}
 		String cmd = "";
 		// RQ RL C STAT
 		while (!cmd.equalsIgnoreCase("EXIT")) {
@@ -68,7 +77,6 @@ public class Test {
 	}
 
 	// --------- Allocate Memory ---------
-	@SuppressWarnings("unlikely-arg-type")
 	public static void AllocMemory(ArrayList<Process> pList, int max, Scanner in) {
 
 		// if it is still less than max even by 1
@@ -81,13 +89,18 @@ public class Test {
 		Process p = new Process(name, size);
 		// F B W - first best worst
 		// ------------------- First allocation ----------------------------
-		if (flag.equalsIgnoreCase("f")) {
+		if (flag.equalsIgnoreCase("F")) {
 
 			for (Process process : pList) {
 				if (process.getName().equalsIgnoreCase("Unused") && process.getSize() >= p.getSize()) {
-					// if it was partitioned we do not change the size
+					// if it was partitioned - take only the needed size
 					process.setName(p.getName());
-					break;
+					if (p.getSize() < process.getSize()) {
+						pList.add(pList.indexOf(process) + 1, new Process("UnUsed", process.getSize() - p.getSize()));
+						pList.get(pList.indexOf(process) + 1).setBaseStart(process.getBaseStart() + p.getSize());
+					}
+					process.setSize(p.getSize());
+					return;
 				}
 			}
 			// if there is no unused look for the memory
@@ -110,6 +123,11 @@ public class Test {
 				currUsed += p.getSize();
 			} else if (p.getSize() <= pList.get(minInd).getSize()) {
 				pList.get(minInd).setName(p.getName());
+				if (p.getSize() < pList.get(minInd).getSize()) {
+					pList.add(minInd + 1, new Process("UnUsed", pList.get(minInd).getSize() - p.getSize()));
+					pList.get(minInd + 1).setBaseStart(pList.get(minInd).getBaseStart() + pList.get(minInd).getSize());
+				}
+				pList.get(minInd).setSize(p.getSize());
 			} else {
 				System.out.println("No available memory");
 			}
@@ -125,6 +143,11 @@ public class Test {
 				currUsed += p.getSize();
 			} else if (p.getSize() <= pList.get(maxInd).getSize()) {
 				pList.get(maxInd).setName(p.getName());
+				if (p.getSize() < pList.get(maxInd).getSize()) {
+					pList.add(maxInd + 1, new Process("UnUsed", pList.get(maxInd).getSize() - p.getSize()));
+					pList.get(maxInd + 1).setBaseStart(pList.get(maxInd).getBaseStart() + pList.get(maxInd).getSize());
+				}
+				pList.get(maxInd).setSize(p.getSize());
 			} else {
 				System.out.println("No available memory");
 			}
