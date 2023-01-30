@@ -18,36 +18,38 @@ public class Test {
 			if (cmd.equalsIgnoreCase("Exit")) {
 				System.exit(0);
 			} else if (cmd.equalsIgnoreCase("RQ")) {
-				AllocMemory(processList, max, in);
-				currBase++;
+
+				if (currUsed >= max && !hasUnUsed(processList)) {
+					System.out.println("Memory is full; current used is " + currUsed + " out of " + max);
+				} else {
+					AllocMemory(processList, max, in);
+				}
 			} else if (cmd.equalsIgnoreCase("RL")) {
 				// change the process if was there to unused
 				deAllocMemory(processList, in);
 
 			} else if (cmd.equalsIgnoreCase("C")) {
-				int freeSize = 0;
-				// delete unused
-				for (int k = 0; k < processList.size(); k++) {
-					for (int i = 0; i < processList.size(); i++) {
-						if (processList.get(i).getName().equalsIgnoreCase("Unused")) {
-							freeSize += processList.get(i).getSize();
-							currUsed -= processList.get(i).getSize();
-							for (int j = i + 1; j < processList.size(); j++) {
-								processList.get(j)
-										.setBaseStart(processList.get(j).getBaseStart() - processList.get(i).getSize());
+
+				for (int i = 0; i < processList.size(); i++) {
+					if (processList.get(i).getName().equalsIgnoreCase("UnUsed")) {
+						// if u found unused , add it is neighbors to it and delete it
+						// do not increment j since we are removing from the list
+						for (int j = i + 1; j < processList.size();) {
+							if (processList.get(j).getName().equalsIgnoreCase("UnUsed")) {
+								processList.get(i).setSize(processList.get(i).getSize() + processList.get(j).getSize());
+								processList.remove(processList.get(j));
+							} else {
+								break;
 							}
-							processList.remove(i);
+
 						}
 					}
 				}
-				processList.add(new Process("Unused", freeSize));
-				processList.get(processList.size() - 1)
-						.setBaseStart(((processList.get(processList.size() - 2).getSize())
-								+ (processList.get(processList.size() - 2).getBaseStart())));
+
 			} else if (cmd.equalsIgnoreCase("STAT")) {
 				for (Process p : processList) {
-					System.out.println("Address [ " + p.getBaseStart() + " - " + (p.getBaseStart() + p.getSize()) + "] "
-							+ p.getName());
+					System.out.println("Address [ " + p.getBaseStart() + " - " + (p.getBaseStart() + p.getSize() - 1)
+							+ "] " + p.getName());
 				}
 			}
 
@@ -66,12 +68,9 @@ public class Test {
 	}
 
 	// --------- Allocate Memory ---------
+	@SuppressWarnings("unlikely-arg-type")
 	public static void AllocMemory(ArrayList<Process> pList, int max, Scanner in) {
-		// if the memory was full , u cannot allocate
-		if (currUsed == max) {
-			System.out.println("Memory is Full cannot Request.");
-			return;
-		}
+
 		// if it is still less than max even by 1
 		// RQ ( done ) P0 40000 W
 		System.out.print("Enter Process Name , Size , flag (e.g P0 40000 W): ");
@@ -83,14 +82,16 @@ public class Test {
 		// F B W - first best worst
 		// ------------------- First allocation ----------------------------
 		if (flag.equalsIgnoreCase("f")) {
+
 			for (Process process : pList) {
 				if (process.getName().equalsIgnoreCase("Unused") && process.getSize() >= p.getSize()) {
 					// if it was partitioned we do not change the size
 					process.setName(p.getName());
+					break;
 				}
 			}
 			// if there is no unused look for the memory
-			if (p.getSize() < (max - currUsed)) {
+			if (p.getSize() <= (max - currUsed) && !pList.contains(p)) {
 				pList.add(p);
 				p.setBaseStart(currBase);
 				currBase += p.getSize();
@@ -180,9 +181,19 @@ public class Test {
 		for (Process p : pList) {
 			if (p.getName().equalsIgnoreCase(name)) {
 				p.setName("UnUsed");
-				currUsed -= p.getSize();
 			}
 		}
+	}
+
+	// -------- Check Unused ----------------------
+	public static boolean hasUnUsed(ArrayList<Process> pList) {
+		boolean flag = false;
+		for (Process p : pList) {
+			if (p.getName().equalsIgnoreCase("UnUsed")) {
+				flag = true;
+			}
+		}
+		return flag;
 	}
 
 }
